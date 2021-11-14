@@ -1,6 +1,6 @@
 # NLP-Chinese_couplet_generation
  
-# #Task1 Data Loading @Joe
+## Task1 Data Loading @Joe
 ### Summary (note from Joe)
 
 - idea0: word2vec的参数因为时间关系我没怎么调，后续可以再优化。大家可以找找有没有别的更好的中文embedding的现有模型或者package能用。
