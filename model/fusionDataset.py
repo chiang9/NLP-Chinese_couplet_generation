@@ -3,7 +3,7 @@ __time__   = "2021/11/23"
 __version__= "1.0"
 
 from tqdm import tqdm
-import torch
+import torch,re
 import jieba
 import jieba.posseg as pseg
 import paddle
