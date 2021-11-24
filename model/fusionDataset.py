@@ -8,6 +8,8 @@ import jieba
 import jieba.posseg as pseg
 import paddle
 from pypinyin import pinyin, Style
+from torch.utils.data import Dataset
+
 
 class FusionDataset(Dataset):
     def __init__(self,X,tokenizer,glyph2ix,pinyin2ix,pos2ix=None,Y=None, pos_ids_X=None,pos_ids_Y=None,skip_error=True):
