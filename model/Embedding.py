@@ -40,7 +40,7 @@ class PinyinEmbedding(nn.Module):
     def forward(self,input_ids):
         return self.embedding(input_ids) # [batch, sentence length , embedding dimension]
     
-class FusionEmedding(nn.Module):
+class FusionEmbedding(nn.Module):
     """
     Word Embedding + Char Embedding + Glyph Embedding + Position Embedding
     """
