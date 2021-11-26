@@ -10,7 +10,6 @@ import paddle
 from pypinyin import pinyin, Style
 from torch.utils.data import Dataset
 
-
 class FusionDataset(Dataset):
     def __init__(self,X,tokenizer,glyph2ix,pinyin2ix,pos2ix=None,Y=None, pos_ids_X=None,pos_ids_Y=None,skip_error=True):
         temp = self.prepare_sequence(X,tokenizer,glyph2ix,pinyin2ix,pos2ix,pos_ids_X,skip_error=skip_error)
@@ -85,6 +84,8 @@ class FusionDataset(Dataset):
                         break
                     bert_tmp.append('[UNK]')
                     sent[i] = '_'
+                elif sent[i] == '_':
+                    bert_tmp.append('[UNK]')
                 else:
                     if sent[i] in char_correct:
                         sent[i] = char_correct[sent[i]]
@@ -112,14 +113,18 @@ class FusionDataset(Dataset):
                 
                 counter = 1
                 for res in trans2pinyin(''.join(sent)):
-                    if re.match(r'\W\_',res):
+                    if '_' in res:
                         for c in res:
+#                             try:
                             pinyin_ids[counter] = pinyin2ix[c]
                             counter+=1
+#                             except:
+#                                 print(bert_tmp,sent,res)
+#                                 raise
                     else:
                         pinyin_ids[counter] = pinyin2ix[res]
                         counter+=1
-                
+
                 glyph_ids[1:cur_l+1] = torch.tensor([glyph2ix[_] for _ in sent],dtype=torch.int)
                 
                 if not sent_pos_ids:
