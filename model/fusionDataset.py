@@ -1,6 +1,6 @@
 __author__ = "Shihao Lin"
-__time__   = "2021/11/23"
-__version__= "1.0"
+__time__   = "2021/11/29"
+__version__= "2.0"
 
 from tqdm import tqdm
 import torch,re
@@ -11,9 +11,34 @@ from pypinyin import pinyin, Style
 from torch.utils.data import Dataset
 
 class FusionDataset(Dataset):
-    def __init__(self,X,tokenizer,glyph2ix,pinyin2ix,pos2ix=None,Y=None, pos_ids_X=None,pos_ids_Y=None,skip_error=True,device=None):
+    def __init__(self,X,tokenizer,glyph2ix,pinyin2ix,
+                 pos2ix=None,Y=None, pos_ids_X=None,
+                 pos_ids_Y=None,skip_error=True,device=None):
         """
-        set device to current device to load dataset into gpu
+        Notes: set device to current device to load dataset into gpu
+        
+        input_ids,token_type_ids,attention_mask are related to Bert embedding
+        pinyin_ids : related to pinyin embedding
+        glyph_ids : related to glyph embedding
+        pos_ids : related to pos tag embedding
+
+        y_true_ids: related to true y decoder output id that links to Bert vocab
+
+        Return:
+        self.x_input_ids[idx], \
+        self.x_token_type_ids[idx], \
+        self.x_attention_mask[idx], \
+        self.x_pinyin_ids[idx], \
+        self.x_glyph_ids[idx], \
+        self.x_pos_ids[idx], \
+        self.y_input_ids[idx], \
+        self.y_token_type_ids[idx], \
+        self.y_attention_mask[idx], \
+        self.y_pinyin_ids[idx], \
+        self.y_glyph_ids[idx], \
+        self.y_pos_ids[idx],\
+        self.y_true_ids[idx]
+
         """
         temp = self.prepare_sequence(X,tokenizer,glyph2ix,
                                      pinyin2ix,pos2ix,
@@ -38,6 +63,7 @@ class FusionDataset(Dataset):
             self.y_pinyin_ids= temp[3]
             self.y_glyph_ids= temp[4]
             self.y_pos_ids= temp[5]
+            self.y_true_ids = temp[6]
         else:
             if device:
                 self.y_input_ids= torch.zeros(len(self.x_input_ids), dtype=torch.long).to(device)
@@ -46,6 +72,8 @@ class FusionDataset(Dataset):
                 self.y_pinyin_ids= torch.zeros(len(self.x_input_ids), dtype=torch.long).to(device)
                 self.y_glyph_ids= torch.zeros(len(self.x_input_ids), dtype=torch.long).to(device)
                 self.y_pos_ids= torch.zeros(len(self.x_input_ids), dtype=torch.long).to(device)
+                self.y_true_ids= torch.zeros(len(self.x_input_ids), dtype=torch.long).to(device)
+
             else:
                 self.y_input_ids= [0]*len(self.x_input_ids)
                 self.y_token_type_ids= [0]*len(self.x_input_ids)
@@ -53,6 +81,7 @@ class FusionDataset(Dataset):
                 self.y_pinyin_ids= [0]*len(self.x_input_ids)
                 self.y_glyph_ids= [0]*len(self.x_input_ids)
                 self.y_pos_ids= [0]*len(self.x_input_ids)
+                self.y_true_ids= [0]*len(self.x_input_ids)
         
     def __len__(self):
         return len(self.x_input_ids)
@@ -69,11 +98,15 @@ class FusionDataset(Dataset):
                 self.y_attention_mask[idx], \
                 self.y_pinyin_ids[idx], \
                 self.y_glyph_ids[idx], \
-                self.y_pos_ids[idx]
+                self.y_pos_ids[idx],\
+                self.y_true_ids[idx]
     
     
     @classmethod
-    def prepare_sequence(cls,sents, tokenizer, glyph2ix,pinyin2ix,pos2ix=None,unpad_sents_pos_ids=None,encode=True,skip_error=True,device=None):
+    def prepare_sequence(cls,sents, tokenizer, glyph2ix,pinyin2ix,pos2ix=None,
+                         unpad_sents_pos_ids=None,encode=True,skip_error=True,
+                         device=None
+                        ):
         
         # tranform the wrong Chinese Char in dataset to match Char in pinyin library
         char_correct = {'凉':'凉','裏':'裹','郎':'郎','ㄚ':'丫','—':'一'}
@@ -86,6 +119,8 @@ class FusionDataset(Dataset):
         sents_pinyin_ids= []
         sents_glyph_ids= []
         sents_pos_ids= []
+        if not encode:
+            sents_true_ids=[]
         if not unpad_sents_pos_ids:
             unpad_sents_pos_ids = [None]*len(sents)
             paddle.enable_static()
@@ -116,6 +151,8 @@ class FusionDataset(Dataset):
                 pinyin_ids= input_ids.clone()
                 glyph_ids= input_ids.clone()
                 pos_ids= input_ids.clone()
+                if not encode:
+                    true_ids = torch.zeros(max_len+2,dtype=torch.int) if encode else torch.zeros(max_len+1,dtype=torch.long)
                                 
                 token_res = tokenizer(''.join(bert_tmp),return_tensors='pt')
                 cur_l = len(sent)
@@ -128,6 +165,7 @@ class FusionDataset(Dataset):
                     input_ids[:cur_l+1] = token_res['input_ids'][0,:cur_l+1]
                     token_type_ids[:cur_l+1] = token_res['token_type_ids'][0,:cur_l+1]
                     attention_mask[:cur_l+1] = token_res['attention_mask'][0,:cur_l+1]
+                    true_ids[:cur_l+1] = token_res['input_ids'][0,1:cur_l+2]
                 
                 counter = 1
                 for res in trans2pinyin(''.join(sent)):
@@ -157,6 +195,8 @@ class FusionDataset(Dataset):
                 sents_pinyin_ids.append(pinyin_ids)
                 sents_glyph_ids.append(glyph_ids)
                 sents_pos_ids.append(pos_ids)
+                if not encode:
+                    sents_true_ids.append(true_ids)
         if device:
             sents_input_ids = torch.stack(sents_input_ids).to(device)
             sents_token_type_ids= torch.stack(sents_token_type_ids).to(device)
@@ -164,6 +204,13 @@ class FusionDataset(Dataset):
             sents_pinyin_ids= torch.stack(sents_pinyin_ids).to(device)
             sents_glyph_ids= torch.stack(sents_glyph_ids).to(device)
             sents_pos_ids= torch.stack(sents_pos_ids).to(device)
-        return sents_input_ids,sents_token_type_ids, \
-                sents_attention_mask,sents_pinyin_ids, \
-                sents_glyph_ids,sents_pos_ids
+            if not encode:
+                sents_true_ids = torch.stack(sents_true_ids).to(device)
+        if encode:
+            return sents_input_ids,sents_token_type_ids, \
+                    sents_attention_mask,sents_pinyin_ids, \
+                    sents_glyph_ids,sents_pos_ids
+        else:
+            return sents_input_ids,sents_token_type_ids, \
+                    sents_attention_mask,sents_pinyin_ids, \
+                    sents_glyph_ids,sents_pos_ids, sents_true_ids
