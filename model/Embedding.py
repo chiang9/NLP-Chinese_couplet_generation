@@ -1,5 +1,5 @@
 __author__ = "Shihao Lin"
-__time__   = "2021/11/22"
+__time__   = "2021/11/28"
 __version__= "1.0"
 
 import numpy as np
@@ -79,5 +79,31 @@ class FusionEmbedding(nn.Module):
         
         position_embeddings = self.position_embeddings(position_ids)
         embeddings = fusion_embed + position_embeddings
-        embeddings = self.LayerNorm(fusion_embed)
+        embeddings = self.LayerNorm(embeddings)
+        return self.dropout(embeddings)
+    
+
+class BertEmbedding(nn.Module):
+    """
+    Bert Word Embedding + Position Embedding
+    """
+    def __init__(self,config):
+        super().__init__()
+        self.config = config
+        self.position_embeddings = nn.Embedding(config['max_position_embeddings'],config['hidden_size'])
+        
+        self.LayerNorm = nn.LayerNorm(config['hidden_size'], eps=config['layer_norm_eps'])
+        self.dropout = nn.Dropout(config['hidden_dropout'])
+
+        # position_ids (1, len position emb) is contiguous in memory and exported when serialized
+        self.register_buffer("position_ids", torch.arange(config['max_position_embeddings']).expand((1, -1)))
+        
+    def forward(self,word_embeddings):
+        seq_length = word_embeddings.shape[1]
+
+        position_ids = self.position_ids[:,:seq_length]
+        position_embeddings = self.position_embeddings(position_ids)
+
+        embeddings = word_embeddings + position_embeddings
+        embeddings = self.LayerNorm(embeddings)
         return self.dropout(embeddings)
