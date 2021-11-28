@@ -11,8 +11,14 @@ from pypinyin import pinyin, Style
 from torch.utils.data import Dataset
 
 class FusionDataset(Dataset):
-    def __init__(self,X,tokenizer,glyph2ix,pinyin2ix,pos2ix=None,Y=None, pos_ids_X=None,pos_ids_Y=None,skip_error=True):
-        temp = self.prepare_sequence(X,tokenizer,glyph2ix,pinyin2ix,pos2ix,pos_ids_X,skip_error=skip_error)
+    def __init__(self,X,tokenizer,glyph2ix,pinyin2ix,pos2ix=None,Y=None, pos_ids_X=None,pos_ids_Y=None,skip_error=True,device=None):
+        """
+        set device to current device to load dataset into gpu
+        """
+        temp = self.prepare_sequence(X,tokenizer,glyph2ix,
+                                     pinyin2ix,pos2ix,
+                                     pos_ids_X,skip_error=skip_error,
+                                     device=device)
         self.x_input_ids= temp[0]
         self.x_token_type_ids= temp[1]
         self.x_attention_mask= temp[2]
@@ -21,7 +27,11 @@ class FusionDataset(Dataset):
         self.x_pos_ids= temp[5]
 
         if Y:
-            temp = self.prepare_sequence(Y,tokenizer,glyph2ix,pinyin2ix,pos2ix,pos_ids_Y,encode=False,skip_error=skip_error)
+            temp = self.prepare_sequence(Y,tokenizer,glyph2ix,
+                                         pinyin2ix,pos2ix,
+                                         pos_ids_Y,encode=False,
+                                         skip_error=skip_error,
+                                         device=device)
             self.y_input_ids= temp[0]
             self.y_token_type_ids= temp[1]
             self.y_attention_mask= temp[2]
@@ -29,12 +39,20 @@ class FusionDataset(Dataset):
             self.y_glyph_ids= temp[4]
             self.y_pos_ids= temp[5]
         else:
-            self.y_input_ids= [0]*len(self.x_input_ids)
-            self.y_token_type_ids= [0]*len(self.x_input_ids)
-            self.y_attention_mask= [0]*len(self.x_input_ids)
-            self.y_pinyin_ids= [0]*len(self.x_input_ids)
-            self.y_glyph_ids= [0]*len(self.x_input_ids)
-            self.y_pos_ids= [0]*len(self.x_input_ids)
+            if device:
+                self.y_input_ids= torch.zeros(len(self.x_input_ids), dtype=torch.long).to(device)
+                self.y_token_type_ids= torch.zeros(len(self.x_input_ids), dtype=torch.long).to(device)
+                self.y_attention_mask= torch.zeros(len(self.x_input_ids), dtype=torch.long).to(device)
+                self.y_pinyin_ids= torch.zeros(len(self.x_input_ids), dtype=torch.long).to(device)
+                self.y_glyph_ids= torch.zeros(len(self.x_input_ids), dtype=torch.long).to(device)
+                self.y_pos_ids= torch.zeros(len(self.x_input_ids), dtype=torch.long).to(device)
+            else:
+                self.y_input_ids= [0]*len(self.x_input_ids)
+                self.y_token_type_ids= [0]*len(self.x_input_ids)
+                self.y_attention_mask= [0]*len(self.x_input_ids)
+                self.y_pinyin_ids= [0]*len(self.x_input_ids)
+                self.y_glyph_ids= [0]*len(self.x_input_ids)
+                self.y_pos_ids= [0]*len(self.x_input_ids)
         
     def __len__(self):
         return len(self.x_input_ids)
@@ -55,7 +73,7 @@ class FusionDataset(Dataset):
     
     
     @classmethod
-    def prepare_sequence(cls,sents, tokenizer, glyph2ix,pinyin2ix,pos2ix=None,unpad_sents_pos_ids=None,encode=True,skip_error=True):
+    def prepare_sequence(cls,sents, tokenizer, glyph2ix,pinyin2ix,pos2ix=None,unpad_sents_pos_ids=None,encode=True,skip_error=True,device=None):
         
         # tranform the wrong Chinese Char in dataset to match Char in pinyin library
         char_correct = {'凉':'凉','裏':'裹','郎':'郎','ㄚ':'丫','—':'一'}
@@ -139,4 +157,13 @@ class FusionDataset(Dataset):
                 sents_pinyin_ids.append(pinyin_ids)
                 sents_glyph_ids.append(glyph_ids)
                 sents_pos_ids.append(pos_ids)
-        return sents_input_ids,sents_token_type_ids,sents_attention_mask,sents_pinyin_ids,sents_glyph_ids,sents_pos_ids
+        if device:
+            sents_input_ids = torch.stack(sents_input_ids).to(device)
+            sents_token_type_ids= torch.stack(sents_token_type_ids).to(device)
+            sents_attention_mask= torch.stack(sents_attention_mask).to(device)
+            sents_pinyin_ids= torch.stack(sents_pinyin_ids).to(device)
+            sents_glyph_ids= torch.stack(sents_glyph_ids).to(device)
+            sents_pos_ids= torch.stack(sents_pos_ids).to(device)
+        return sents_input_ids,sents_token_type_ids, \
+                sents_attention_mask,sents_pinyin_ids, \
+                sents_glyph_ids,sents_pos_ids
