@@ -1,5 +1,5 @@
 __author__ = "Shihao Lin"
-__time__   = "2021/11/28"
+__time__   = "2021/11/22"
 __version__= "1.0"
 
 import numpy as np
@@ -106,4 +106,40 @@ class BertEmbedding(nn.Module):
 
         embeddings = word_embeddings + position_embeddings
         embeddings = self.LayerNorm(embeddings)
+        return self.dropout(embeddings)
+    
+class FusionAttenEmbedding(nn.Module):
+    """
+    Word Embedding + Char Embedding + Glyph Embedding
+    """
+    def __init__(self,config):
+        super().__init__()
+        self.config = config
+        self.glyph_embeddings = GlyphEmbedding(config['font_weight_path'])
+        self.pinyin_embeddings = PinyinEmbedding(config['pinyin_embed_dim'],config['pinyin_path'])
+        
+        self.pos_tag_embeddings = nn.Embedding(config['tag_size'], config['tag_emb_dim'], padding_idx = 0)
+        # initialize the embedding weights through uniformly sample from [-square_root(3/dim), +square_root(3/dim)]
+        self.pos_tag_embeddings.weight.data.uniform_(-(3/config['tag_emb_dim'])**0.5, (3/config['tag_emb_dim'])**0.5)
+        
+        self.fc = nn.Linear(config['hidden_size']+config['pinyin_embed_dim'] \
+                            +24**2 + config['tag_emb_dim'], config['hidden_size'])
+        
+        self.LayerNorm = nn.LayerNorm(config['hidden_size'], eps=config['layer_norm_eps'])
+        self.dropout = nn.Dropout(config['hidden_dropout'])
+        
+    def forward(self,word_embeddings,pinyin_ids,glyph_ids,pos_ids):
+        batch_size = pinyin_ids.shape[0]
+        seq_length = pinyin_ids.shape[1]
+        position_ids = self.position_ids[:,:seq_length]
+        
+        pinyin_embeddings = self.pinyin_embeddings(pinyin_ids)
+        glyph_embeddings = self.glyph_embeddings(glyph_ids)
+        pos_tag_embeddings = self.pos_tag_embeddings(pos_ids)
+        
+        concat_embeddings = torch.cat((word_embeddings,pinyin_embeddings,glyph_embeddings,pos_tag_embeddings),2)
+        
+        fusion_embed = self.fc(concat_embeddings)
+        
+        embeddings = self.LayerNorm(fusion_embed)
         return self.dropout(embeddings)
