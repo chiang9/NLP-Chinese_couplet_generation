@@ -59,8 +59,7 @@ def train_epoch(model,dataLoader,optimizer,loss_function,
                   'Yword_embeddings':Yword_embeddings,\
                   'Ysents_pinyin_ids':Ysents_pinyin_ids, \
                   'Ysents_glyph_ids':Ysents_glyph_ids,\
-                  'Ysents_pos_ids':Ysents_pos_ids, \
-                  'device':device}
+                  'Ysents_pos_ids':Ysents_pos_ids}
         
         if with_trans:
             inputs['Xpad_hidden_mask'] = (~ Xsents_attention_mask.bool()).detach()
@@ -133,8 +132,7 @@ def evaluate_epoch(model,dataLoader,loss_function,
                       'Yword_embeddings':Yword_embeddings,\
                       'Ysents_pinyin_ids':Ysents_pinyin_ids, \
                       'Ysents_glyph_ids':Ysents_glyph_ids,\
-                      'Ysents_pos_ids':Ysents_pos_ids, \
-                      'device':device}
+                      'Ysents_pos_ids':Ysents_pos_ids}
 
             if with_trans:
                 inputs['Xpad_hidden_mask'] = (~ Xsents_attention_mask.bool()).detach()

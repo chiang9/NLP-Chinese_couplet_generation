@@ -35,6 +35,7 @@ class Fusion_Anchi_Trans_Decoder(nn.Module):
     def __init__(self,config):
         super().__init__()
         
+        self.device = config['device']
         self.embedding = FusionEmbedding(config)
 
         decoder_layer = nn.TransformerDecoderLayer(d_model=config['hidden_size'], nhead=config['nhead'])
@@ -55,7 +56,7 @@ class Fusion_Anchi_Trans_Decoder(nn.Module):
                 Yword_embeddings,Ysents_pinyin_ids, \
                 Ysents_glyph_ids,Ysents_pos_ids,\
                 Xpad_hidden_mask,Ypad_hidden_mask,\
-                device,tgt_mask=None,*args,**kwargs):
+                tgt_mask=None,*args,**kwargs):
         
         memory = self.embedding(Xword_embeddings,Xsents_pinyin_ids, \
                                 Xsents_glyph_ids,Xsents_pos_ids).permute([1,0,2])
@@ -63,7 +64,7 @@ class Fusion_Anchi_Trans_Decoder(nn.Module):
                              Ysents_glyph_ids,Ysents_pos_ids).permute([1,0,2])
         
         if tgt_mask==None:
-            tgt_mask = self._generate_square_subsequent_mask(Ypad_hidden_mask.shape[1]).to(device)
+            tgt_mask = self._generate_square_subsequent_mask(Ypad_hidden_mask.shape[1]).to(self.device)
         
         outputs = self.transformer_decoder(tgt, memory, \
                                            tgt_mask= tgt_mask, \
@@ -77,6 +78,30 @@ class Fusion_Anchi_Trans_Decoder(nn.Module):
         outputs = self.Linear(outputs)
 
         return F.log_softmax(outputs, dim=-1)
+    
+    def encode(self,Xword_embeddings,Xsents_pinyin_ids, \
+                Xsents_glyph_ids,Xsents_pos_ids,*args,**kwargs):
+        # [max_length, batch_size, hidden_dim]
+        return self.embedding(Xword_embeddings,Xsents_pinyin_ids, \
+                              Xsents_glyph_ids,Xsents_pos_ids).permute([1,0,2])
+    
+    
+    def decode(self,memory, Xpad_hidden_mask, \
+                Yword_embeddings,Ysents_pinyin_ids, \
+                Ysents_glyph_ids,Ysents_pos_ids,\
+                Ypad_hidden_mask,\
+                tgt_mask=None,*args,**kwargs):
+
+        if tgt_mask==None:
+            tgt_mask = self._generate_square_subsequenhut_mask(Ypad_hidden_mask.shape[1]).to(self.device)
+            
+        # [max_length, batch_size, hidden_dim]
+        return self.transformer_decoder(tgt=self.embedding(Yword_embeddings,Ysents_pinyin_ids, \
+                                                        Ysents_glyph_ids,Ysents_pos_ids).permute([1,0,2]),\
+                                        memory = memory,
+                                        tgt_mask = tgt_mask,
+                                        tgt_key_padding_mask= Ypad_hidden_mask,
+                                        memory_key_padding_mask = Xpad_hidden_mask)
     
     
 
@@ -101,6 +126,7 @@ class Fusion_Anchi_Transformer(nn.Module):
     
     def __init__(self,config):
         super().__init__()
+        self.device = config['device']
         
         self.embedding = FusionEmbedding(config)
         self.transformer = nn.Transformer(d_model=config['hidden_size'],nhead=config['nhead'],\
@@ -125,13 +151,13 @@ class Fusion_Anchi_Transformer(nn.Module):
                 Yword_embeddings,Ysents_pinyin_ids, \
                 Ysents_glyph_ids,Ysents_pos_ids, \
                 Xpad_hidden_mask,Ypad_hidden_mask, \
-                device,tgt_mask=None,*args,**kwargs):
+                tgt_mask=None,*args,**kwargs):
         scr = self.embedding(Xword_embeddings,Xsents_pinyin_ids, \
                                 Xsents_glyph_ids,Xsents_pos_ids).permute([1,0,2])
         tgt = self.embedding(Yword_embeddings,Ysents_pinyin_ids, \
                              Ysents_glyph_ids,Ysents_pos_ids).permute([1,0,2])
         if tgt_mask==None:
-            tgt_mask = self._generate_square_subsequent_mask(Ypad_hidden_mask.shape[1]).to(device)
+            tgt_mask = self._generate_square_subsequent_mask(Ypad_hidden_mask.shape[1]).to(self.device)
         
         outputs = self.transformer(scr, tgt,\
                                    tgt_mask=tgt_mask,\
@@ -143,6 +169,33 @@ class Fusion_Anchi_Transformer(nn.Module):
         
         return F.log_softmax(outputs, dim=-1) #[batch_size,max_length,output_dim]
     
+    def encode(self,Xword_embeddings,Xsents_pinyin_ids, \
+                Xsents_glyph_ids,Xsents_pos_ids,Xpad_hidden_mask, \
+               *args,**kwargs):
+        # [max_length, batch_size, hidden_dim]
+        return self.transformer.encoder(src=self.embedding(Xword_embeddings,Xsents_pinyin_ids, \
+                                        Xsents_glyph_ids,Xsents_pos_ids).permute([1,0,2]),\
+                                        src_key_padding_mask=Xpad_hidden_mask)
+    
+    
+    def decode(self,memory, Xpad_hidden_mask, \
+                Yword_embeddings,Ysents_pinyin_ids, \
+                Ysents_glyph_ids,Ysents_pos_ids,\
+                Ypad_hidden_mask,\
+                tgt_mask=None,*args,**kwargs):
+        
+        if tgt_mask==None:
+            tgt_mask = self._generate_square_subsequenhut_mask(Ypad_hidden_mask.shape[1]).to(self.device)
+            
+        # [max_length, batch_size, hidden_dim]
+        return self.transformer.decoder(tgt=self.embedding(Yword_embeddings,Ysents_pinyin_ids, \
+                                                        Ysents_glyph_ids,Ysents_pos_ids).permute([1,0,2]),\
+                                        memory = memory,
+                                        tgt_mask = tgt_mask,
+                                        tgt_key_padding_mask= Ypad_hidden_mask,
+                                        memory_key_padding_mask = Xpad_hidden_mask)
+    
+
     
 class Anchi_Transformer(nn.Module):
     """
@@ -165,7 +218,7 @@ class Anchi_Transformer(nn.Module):
     
     def __init__(self,config):
         super().__init__()
-        
+        self.device = config['device']
         self.embedding = BertEmbedding(config)
         self.transformer = nn.Transformer(d_model=config['hidden_size'],nhead=config['nhead'],\
                                           num_encoder_layers=config['num_encoder_layers'],\
@@ -185,14 +238,14 @@ class Anchi_Transformer(nn.Module):
         return mask
 
     def forward(self,Xword_embeddings, Yword_embeddings, \
-                Xpad_hidden_mask,Ypad_hidden_mask, \
-                device,tgt_mask=None,*args,**kwargs):
+                Xpad_hidden_mask,Ypad_hidden_mask,\
+                tgt_mask=None,*args,**kwargs):
         
         scr = self.embedding(Xword_embeddings).permute([1,0,2])
         tgt = self.embedding(Yword_embeddings).permute([1,0,2])
         
         if tgt_mask==None:
-            tgt_mask = self._generate_square_subsequent_mask(Ypad_hidden_mask.shape[1]).to(device)
+            tgt_mask = self._generate_square_subsequent_mask(Ypad_hidden_mask.shape[1]).to(self.device)
         
         outputs = self.transformer(scr, tgt,
                                    tgt_mask=tgt_mask,
@@ -202,6 +255,21 @@ class Anchi_Transformer(nn.Module):
         outputs = self.Linear(outputs).permute([1,0,2])
         
         return F.log_softmax(outputs, dim=-1) #[batch_size,max_length,output_dim]
+    
+    def encode(self,Xword_embeddings, Xpad_hidden_mask,*args,**kwargs):
+        # [max_length, batch_size, hidden_dim]
+        return self.transformer.encoder(src=self.embedding(Xword_embeddings).permute([1,0,2]),
+                                        src_key_padding_mask=Xpad_hidden_mask) 
+    
+    def decode(self,memory, Xpad_hidden_mask, Yword_embeddings, Ypad_hidden_mask, tgt_mask=None, *args, **kwargs):
+        if tgt_mask==None:
+            tgt_mask = self._generate_square_subsequenhut_mask(Ypad_hidden_mask.shape[1]).to(self.device)
+         # [max_length, batch_size, hidden_dim]
+        return self.transformer.decoder(tgt=self.embedding(Yword_embeddings).permute([1,0,2]),
+                                        memory = memory,
+                                        tgt_mask = tgt_mask,
+                                        tgt_key_padding_mask= Ypad_hidden_mask,
+                                        memory_key_padding_mask = Xpad_hidden_mask)
     
     
 class Anchi_Decoder(nn.Module):
@@ -231,6 +299,9 @@ class Anchi_Decoder(nn.Module):
     def __init__(self,config):
         super().__init__()
         
+        self.device = config['device']
+        self.embedding = BertEmbedding(config)
+
         decoder_layer = nn.TransformerDecoderLayer(d_model=config['hidden_size'], nhead=config['nhead'])
         self.transformer_decoder = nn.TransformerDecoder(decoder_layer, num_layers=config['num_layers'])
         
@@ -247,12 +318,16 @@ class Anchi_Decoder(nn.Module):
     def forward(self,Xword_embeddings,\
                 Yword_embeddings,\
                 Xpad_hidden_mask,Ypad_hidden_mask,\
-                device,tgt_mask=None,*args,**kwargs):
+                tgt_mask=None,*args,**kwargs):
+        
+        memory = self.embedding(Xword_embeddings).permute([1,0,2])
+        tgt = self.embedding(Yword_embeddings).permute([1,0,2])
+        
         
         if tgt_mask==None:
-            tgt_mask = self._generate_square_subsequenhut_mask(Ypad_hidden_mask.shape[1]).to(device)
+            tgt_mask = self._generate_square_subsequenhut_mask(Ypad_hidden_mask.shape[1]).to(self.device)
         
-        outputs = self.transformer_decoder(Yword_embeddings.permute([1,0,2]), Xword_embeddings.permute([1,0,2]),\
+        outputs = self.transformer_decoder(tgt=tgt,memory=memory, \
                                            tgt_mask= tgt_mask, \
                                            # Xpad_hidden_mask == ~ Xsents_attention_mask.bool()
                                            memory_key_padding_mask = Xpad_hidden_mask, \
@@ -262,3 +337,20 @@ class Anchi_Decoder(nn.Module):
         outputs = self.Linear(outputs)
 
         return F.log_softmax(outputs, dim=-1)
+    
+    def encode(self,Xword_embeddings,*args,**kwargs):
+        # [max_length, batch_size, hidden_dim]
+        return self.embedding(Xword_embeddings).permute([1,0,2]) 
+    
+    
+    def decode(self,memory, Xpad_hidden_mask, Yword_embeddings, Ypad_hidden_mask, tgt_mask=None, *args, **kwargs):
+
+        if tgt_mask==None:
+            tgt_mask = self._generate_square_subsequenhut_mask(Ypad_hidden_mask.shape[1]).to(self.device)
+            
+        # [max_length, batch_size, hidden_dim]
+        return self.transformer_decoder(tgt=self.embedding(Yword_embeddings).permute([1,0,2]),
+                                        memory = memory,
+                                        tgt_mask = tgt_mask,
+                                        tgt_key_padding_mask= Ypad_hidden_mask,
+                                        memory_key_padding_mask = Xpad_hidden_mask)
