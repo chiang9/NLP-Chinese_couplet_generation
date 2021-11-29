@@ -55,14 +55,15 @@ class Fusion_Anchi_Trans_Decoder(nn.Module):
                 Yword_embeddings,Ysents_pinyin_ids, \
                 Ysents_glyph_ids,Ysents_pos_ids,\
                 Xpad_hidden_mask,Ypad_hidden_mask,\
-                device,*args,**kwargs):
+                device,tgt_mask=None,*args,**kwargs):
         
         memory = self.embedding(Xword_embeddings,Xsents_pinyin_ids, \
                                 Xsents_glyph_ids,Xsents_pos_ids).permute([1,0,2])
         tgt = self.embedding(Yword_embeddings,Ysents_pinyin_ids, \
                              Ysents_glyph_ids,Ysents_pos_ids).permute([1,0,2])
         
-        tgt_mask = self._generate_square_subsequent_mask(Ypad_hidden_mask.shape[1]).to(device)
+        if not tgt_mask:
+            tgt_mask = self._generate_square_subsequent_mask(Ypad_hidden_mask.shape[1]).to(device)
         
         outputs = self.transformer_decoder(tgt, memory, \
                                            tgt_mask= tgt_mask, \
@@ -124,13 +125,13 @@ class Fusion_Anchi_Transformer(nn.Module):
                 Yword_embeddings,Ysents_pinyin_ids, \
                 Ysents_glyph_ids,Ysents_pos_ids, \
                 Xpad_hidden_mask,Ypad_hidden_mask, \
-                device,*args,**kwargs):
+                device,tgt_mask=None,*args,**kwargs):
         scr = self.embedding(Xword_embeddings,Xsents_pinyin_ids, \
                                 Xsents_glyph_ids,Xsents_pos_ids).permute([1,0,2])
         tgt = self.embedding(Yword_embeddings,Ysents_pinyin_ids, \
                              Ysents_glyph_ids,Ysents_pos_ids).permute([1,0,2])
-        
-        tgt_mask = self._generate_square_subsequent_mask(Ypad_hidden_mask.shape[1]).to(device)
+        if not tgt_mask:
+            tgt_mask = self._generate_square_subsequent_mask(Ypad_hidden_mask.shape[1]).to(device)
         
         outputs = self.transformer(scr, tgt,\
                                    tgt_mask=tgt_mask,\
@@ -185,12 +186,13 @@ class Anchi_Transformer(nn.Module):
 
     def forward(self,Xword_embeddings, Yword_embeddings, \
                 Xpad_hidden_mask,Ypad_hidden_mask, \
-                device,*args,**kwargs):
+                device,tag_mask=None,*args,**kwargs):
         
         scr = self.embedding(Xword_embeddings).permute([1,0,2])
         tgt = self.embedding(Yword_embeddings).permute([1,0,2])
         
-        tgt_mask = self._generate_square_subsequent_mask(Ypad_hidden_mask.shape[1]).to(device)
+        if not tgt_mask:
+            tgt_mask = self._generate_square_subsequent_mask(Ypad_hidden_mask.shape[1]).to(device)
         
         outputs = self.transformer(scr, tgt,
                                    tgt_mask=tgt_mask,
@@ -245,9 +247,9 @@ class Anchi_Decoder(nn.Module):
     def forward(self,Xword_embeddings,\
                 Yword_embeddings,\
                 Xpad_hidden_mask,Ypad_hidden_mask,\
-                device,*args,**kwargs):
-        
-        tgt_mask = self._generate_square_subsequent_mask(Ypad_hidden_mask.shape[1]).to(device)
+                device,tag_mask=None,*args,**kwargs):
+        if not tag_mask:
+            tgt_mask = self._generate_square_subsequenhut_mask(Ypad_hidden_mask.shape[1]).to(device)
         
         outputs = self.transformer_decoder(Yword_embeddings.permute([1,0,2]), Xword_embeddings.permute([1,0,2]),\
                                            tgt_mask= tgt_mask, \

@@ -64,6 +64,7 @@ class FusionDataset(Dataset):
             self.y_glyph_ids= temp[4]
             self.y_pos_ids= temp[5]
             self.y_true_ids = temp[6]
+            self.y_mask_ids = self._generate_square_subsequenhut_mask(self.y_input_ids.shape[1]).to(device)
         else:
             if device:
                 self.y_input_ids= torch.zeros(len(self.x_input_ids), dtype=torch.long).to(device)
@@ -73,6 +74,7 @@ class FusionDataset(Dataset):
                 self.y_glyph_ids= torch.zeros(len(self.x_input_ids), dtype=torch.long).to(device)
                 self.y_pos_ids= torch.zeros(len(self.x_input_ids), dtype=torch.long).to(device)
                 self.y_true_ids= torch.zeros(len(self.x_input_ids), dtype=torch.long).to(device)
+                self.y_mask_ids = torch.zeros(0)
 
             else:
                 self.y_input_ids= [0]*len(self.x_input_ids)
@@ -82,6 +84,7 @@ class FusionDataset(Dataset):
                 self.y_glyph_ids= [0]*len(self.x_input_ids)
                 self.y_pos_ids= [0]*len(self.x_input_ids)
                 self.y_true_ids= [0]*len(self.x_input_ids)
+                self.y_mask_ids = 0
         
     def __len__(self):
         return len(self.x_input_ids)
@@ -99,8 +102,14 @@ class FusionDataset(Dataset):
                 self.y_pinyin_ids[idx], \
                 self.y_glyph_ids[idx], \
                 self.y_pos_ids[idx],\
-                self.y_true_ids[idx]
+                self.y_true_ids[idx],\
+                self.y_mask_ids
     
+    @classmethod
+    def _generate_square_subsequent_mask(cls, sz):
+        mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
+        mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
+        return mask
     
     @classmethod
     def prepare_sequence(cls,sents, tokenizer, glyph2ix,pinyin2ix,pos2ix=None,
