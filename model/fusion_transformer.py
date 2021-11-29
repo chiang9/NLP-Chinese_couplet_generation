@@ -62,7 +62,7 @@ class Fusion_Anchi_Trans_Decoder(nn.Module):
         tgt = self.embedding(Yword_embeddings,Ysents_pinyin_ids, \
                              Ysents_glyph_ids,Ysents_pos_ids).permute([1,0,2])
         
-        if not tgt_mask:
+        if tgt_mask==None:
             tgt_mask = self._generate_square_subsequent_mask(Ypad_hidden_mask.shape[1]).to(device)
         
         outputs = self.transformer_decoder(tgt, memory, \
@@ -130,7 +130,7 @@ class Fusion_Anchi_Transformer(nn.Module):
                                 Xsents_glyph_ids,Xsents_pos_ids).permute([1,0,2])
         tgt = self.embedding(Yword_embeddings,Ysents_pinyin_ids, \
                              Ysents_glyph_ids,Ysents_pos_ids).permute([1,0,2])
-        if not tgt_mask:
+        if tgt_mask==None:
             tgt_mask = self._generate_square_subsequent_mask(Ypad_hidden_mask.shape[1]).to(device)
         
         outputs = self.transformer(scr, tgt,\
@@ -186,12 +186,12 @@ class Anchi_Transformer(nn.Module):
 
     def forward(self,Xword_embeddings, Yword_embeddings, \
                 Xpad_hidden_mask,Ypad_hidden_mask, \
-                device,tag_mask=None,*args,**kwargs):
+                device,tgt_mask=None,*args,**kwargs):
         
         scr = self.embedding(Xword_embeddings).permute([1,0,2])
         tgt = self.embedding(Yword_embeddings).permute([1,0,2])
         
-        if not tgt_mask:
+        if tgt_mask==None:
             tgt_mask = self._generate_square_subsequent_mask(Ypad_hidden_mask.shape[1]).to(device)
         
         outputs = self.transformer(scr, tgt,
@@ -247,8 +247,9 @@ class Anchi_Decoder(nn.Module):
     def forward(self,Xword_embeddings,\
                 Yword_embeddings,\
                 Xpad_hidden_mask,Ypad_hidden_mask,\
-                device,tag_mask=None,*args,**kwargs):
-        if not tag_mask:
+                device,tgt_mask=None,*args,**kwargs):
+        
+        if tgt_mask==None:
             tgt_mask = self._generate_square_subsequenhut_mask(Ypad_hidden_mask.shape[1]).to(device)
         
         outputs = self.transformer_decoder(Yword_embeddings.permute([1,0,2]), Xword_embeddings.permute([1,0,2]),\
