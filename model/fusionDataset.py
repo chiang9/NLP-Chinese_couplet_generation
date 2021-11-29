@@ -64,7 +64,7 @@ class FusionDataset(Dataset):
             self.y_glyph_ids= temp[4]
             self.y_pos_ids= temp[5]
             self.y_true_ids = temp[6]
-            self.y_mask_ids = self._generate_square_subsequenhut_mask(self.y_input_ids.shape[1]).to(device)
+            self.y_mask_ids = self.generate_square_subsequent_mask(self.y_input_ids.shape[1]).to(device)
         else:
             if device:
                 self.y_input_ids= torch.zeros(len(self.x_input_ids), dtype=torch.long).to(device)
@@ -106,7 +106,7 @@ class FusionDataset(Dataset):
                 self.y_mask_ids
     
     @classmethod
-    def _generate_square_subsequent_mask(cls, sz):
+    def generate_square_subsequent_mask(cls, sz):
         mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
         mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
         return mask
