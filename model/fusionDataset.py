@@ -1,6 +1,6 @@
 __author__ = "Shihao Lin"
-__time__   = "2021/11/29"
-__version__= "2.0"
+__time__   = "2021/11/30"
+__version__= "3.0"
 
 from tqdm import tqdm
 import torch,re
