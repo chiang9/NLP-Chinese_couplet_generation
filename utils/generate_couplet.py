@@ -86,6 +86,7 @@ def greedy_decode(model,bert,tokenizer,
         _,next_word = torch.max(prob,dim=1)
         next_word = tokenizer.convert_ids_to_tokens(next_word)[0]
         
+        # 不存在 glyph dict的词以及'[SEP]' 和'[PAD]'给转换成 '_'。
         next_word = next_word if next_word in glyph2ix else '_'
         ys.append(next_word)
     return ys
