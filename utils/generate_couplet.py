@@ -84,7 +84,7 @@ def greedy_decode(model,bert,tokenizer,
 
         # FYI, while you implement the beam search
         # add F.log_softmax(out, dim=-1) to it to get acutual log prob
-        _,next_word = torch.max(prob,dim=2)
+        _,next_word = torch.max(prob,dim=0)
         # print(next_word)
         next_word = ix2glyph[next_word.item()]
         
