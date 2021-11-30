@@ -64,7 +64,7 @@ class FusionDataset(Dataset):
             self.y_glyph_ids= temp[4]
             self.y_pos_ids= temp[5]
             self.y_true_ids = temp[6]
-            self.y_mask_ids = self.generate_square_subsequent_mask(self.y_input_ids.shape[1]).to(device)
+            self.y_mask_ids = temp[7]
         else:
             if device:
                 self.y_input_ids= torch.zeros(len(self.x_input_ids), dtype=torch.long).to(device)
@@ -161,7 +161,7 @@ class FusionDataset(Dataset):
                 glyph_ids= input_ids.clone()
                 pos_ids= input_ids.clone()
                 if not encode:
-                    true_ids = torch.zeros(max_len+2,dtype=torch.int) if encode else torch.zeros(max_len+1,dtype=torch.long)
+                    true_ids = torch.zeros(max_len+1,dtype=torch.long)
                                 
                 token_res = tokenizer(''.join(bert_tmp),return_tensors='pt')
                 cur_l = len(sent)
@@ -215,6 +215,10 @@ class FusionDataset(Dataset):
             sents_pos_ids= torch.stack(sents_pos_ids).to(device)
             if not encode:
                 sents_true_ids = torch.stack(sents_true_ids).to(device)
+                masks = cls.generate_square_subsequent_mask(max_len+1).to(device)
+        else:
+            if not encode:
+                masks = cls.generate_square_subsequent_mask(max_len+1)
         if encode:
             return sents_input_ids,sents_token_type_ids, \
                     sents_attention_mask,sents_pinyin_ids, \
@@ -222,4 +226,5 @@ class FusionDataset(Dataset):
         else:
             return sents_input_ids,sents_token_type_ids, \
                     sents_attention_mask,sents_pinyin_ids, \
-                    sents_glyph_ids,sents_pos_ids, sents_true_ids
+                    sents_glyph_ids,sents_pos_ids, \
+                    sents_true_ids, masks
