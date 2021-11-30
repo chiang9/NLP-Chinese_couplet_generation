@@ -13,7 +13,7 @@ from torch.utils.data import Dataset
 class FusionDataset(Dataset):
     def __init__(self,X,tokenizer,glyph2ix,pinyin2ix,
                  pos2ix=None,Y=None, pos_ids_X=None,
-                 pos_ids_Y=None,skip_error=True,device=None):
+                 pos_ids_Y=None,skip_error=False,device=None):
         """
         Notes: set device to current device to load dataset into gpu
         
