@@ -4,7 +4,16 @@ __version__= "1.0"
 
 import torch
 import sys
-sys.path.append('.../model')
+
+import os
+import sys
+
+REPO_PATH = "/".join(os.path.realpath(__file__).split("/")[:-2])
+print(REPO_PATH)
+if REPO_PATH not in sys.path:
+    sys.path.insert(0, REPO_PATH)
+
+# sys.path.append('.../model')
 from model.fusionDataset import FusionDataset
 import torch.nn.functional as F
 
@@ -93,6 +102,7 @@ def greedy_decode(model,bert,tokenizer,
         
         ys.append(next_word)
     return ys
+
 
 def beam_search_decode(model,k,bert,tokenizer,
                       sent,glyph2ix,
@@ -185,7 +195,7 @@ def beam_search_decode(model,k,bert,tokenizer,
             
             last_word_prob = get_last_log_prob(seq,memory)
             
-            values, indices = last_word_prob.topk(k,largest=False)
+            values, indices = last_word_prob.topk(k)
             for j in range(k):
                 w = ix2glyph[indices[j].item()]
                 candidate = [seq+[w], score - values[j]]
