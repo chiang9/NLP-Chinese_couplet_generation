@@ -1,6 +1,7 @@
+#     return best_model, train_losses,valid_losses
 __author__ = "Shihao Lin"
-__time__   = "2021/11/29"
-__version__= "1.0"
+__time__   = "2021/12/1"
+__version__= "2.0"
 
 import os,time,pickle
 import torch.optim as optim
@@ -45,12 +46,20 @@ def train_epoch(model,dataLoader,optimizer,loss_function,
                                  Xsents_token_type_ids, \
                                  Xsents_attention_mask  \
                                  )['last_hidden_state'].detach()
-
-
-        Yword_embeddings = bert(Ysents_input_ids,      \
-                                Ysents_token_type_ids, \
-                                Ysents_attention_mask  \
-                               )['last_hidden_state'].detach()
+        
+        batch_size,length = Ysents_input_ids.shape
+        
+        Yword_embeddings = torch.zeros([batch_size,length,768],dtype=torch.float32,device=device)
+        for i in range(length):
+            Yword_embeddings[:,i,:] = bert(Ysents_glyph_ids[:,:i+1],
+                                            Ysents_token_type_ids[:,:i+1],
+                                            Ysents_attention_mask[:,:i+1])\
+                                            ['last_hidden_state'].detach()[:,i,:]
+        
+        # Yword_embeddings = bert(Ysents_input_ids,      \
+        #                         Ysents_token_type_ids, \
+        #                         Ysents_attention_mask  \
+        #                         )['last_hidden_state'].detach()
         
         inputs = {'Xword_embeddings':Xword_embeddings, \
                   'Xsents_pinyin_ids':Xsents_pinyin_ids, \
@@ -118,12 +127,15 @@ def evaluate_epoch(model,dataLoader,loss_function,
                                      Xsents_token_type_ids, \
                                      Xsents_attention_mask  \
                                      )['last_hidden_state'].detach()
-
-
-            Yword_embeddings = bert(Ysents_input_ids,      \
-                                    Ysents_token_type_ids, \
-                                    Ysents_attention_mask  \
-                                   )['last_hidden_state'].detach()
+            
+            batch_size,length = Ysents_input_ids.shape
+            
+            Yword_embeddings = torch.zeros([batch_size,length,768],dtype=torch.float32,device=device)
+            for i in range(length):
+                Yword_embeddings[:,i,:] = bert(Ysents_glyph_ids[:,:i+1],
+                                                Ysents_token_type_ids[:,:i+1],
+                                                Ysents_attention_mask[:,:i+1])\
+                                                ['last_hidden_state'].detach()[:,i,:]
 
             inputs = {'Xword_embeddings':Xword_embeddings, \
                       'Xsents_pinyin_ids':Xsents_pinyin_ids, \
