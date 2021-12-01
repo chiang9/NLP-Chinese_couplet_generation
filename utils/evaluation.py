@@ -11,7 +11,7 @@ import pickle
 from generate_couplet import beam_search_decode
 from transformers import (BertTokenizer,BertConfig,BertModel)
 
-import sys,os,torch,json
+import sys,os,torch,json,time
 # sys.path.append('.../model')
 REPO_PATH = "/".join(os.path.realpath(__file__).split("/")[:-2])
 print(REPO_PATH)
@@ -20,7 +20,7 @@ if REPO_PATH not in sys.path:
 from model.fusionDataset import FusionDataset
 from model.fusion_transformer import Fusion_Anchi_Trans_Decoder, Fusion_Anchi_Transformer, Anchi_Decoder,Anchi_Transformer
 
-def evaluate_pred(gold, pred, perplexity_model = '/result/perplexity_model.pt'):
+def evaluate_pred(gold, pred, perplexity_model = '../result/perplexity_model.pt'):
     """evaluation metrics for BLEU and Perplexity
 
     Args:
@@ -59,6 +59,7 @@ if __name__ == '__main__':
     """
     python evaluation
     """
+    s1 = time.time()
     
     config = BertConfig.from_pretrained('../AnchiBERT')
     tokenizer = BertTokenizer.from_pretrained('../AnchiBERT')
@@ -92,23 +93,28 @@ if __name__ == '__main__':
     ###############################################################
     #            Change this part based on model                  #
     ###############################################################
-    config = { # for Fusion_Anchi_Trans_Decoder
+    config = { # Fusion_Anchi_Transformer
         'max_position_embeddings':50,
         'hidden_size':768,
         'font_weight_path':'../data/glyph_weight.npy',
         'pinyin_embed_dim':30, # trainable
         'pinyin_path':'../data/pinyin_map.json',
         'tag_size':30,
-        'tag_emb_dim':10, # trainable
-        'layer_norm_eps':1e-12,
-        'hidden_dropout':0.1,
+        'tag_emb_dim':10, # trainable 
+        'layer_norm_eps':1e-12, 
+        'hidden_dropout':0.1, 
         'nhead':12,
-        'num_layers':6 , #6, trainable
+        'num_encoder_layers':5, # trainable
+        'num_decoder_layers':6, # trainable
         'output_dim':9110,# fixed use glyph dim as output
-        'device':device,
+        'dim_feedforward': 3072,
+        'activation':'relu',
+        'trans_dropout':0.1,
+        'device':device
     }
-    name = f'fu_anchi_de_Adam_128_0001_60_6_30_10_193k'
-    model = Fusion_Anchi_Trans_Decoder(config)
+    # <model_name>_<optim>_<batch_num>_<lr>_<epoch>_<pinyin_embed_dim>_<tag_emb_dim>_<encoder layer>_<decoder layer>_<train_data_size>
+    name = 'fu_anchi_tra_Adam_128_00001_60_30_10_5_6_110k'
+    model = Fusion_Anchi_Transformer(config)
     model.load_state_dict(torch.load(f'../result/{name}.pt'))
     
     ################################################################
@@ -126,8 +132,13 @@ if __name__ == '__main__':
                               ix2glyph=ix2glyph,
                                 device=device)[0][0]
         predicts.append(''.join(predict))
-        
-    res = evaluate_pred(te_out, predicts)
     
-    with open(f'../result/{name}.txt','wb') as f:
+    with open(f'../result/{name}_predict.txt','w') as f:
+        for i in predicts:
+            f.write(i+'\n')
+            
+    res = evaluate_pred(te_out, predicts)
+    print('result',res)
+    print('time:',time.time()-s1)
+    with open(f'../result/{name}.txt','w') as f:
         f.write(f'{res[0]}\t{res[1][0]}\t{res[1][1]}')
