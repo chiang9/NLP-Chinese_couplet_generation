@@ -195,12 +195,15 @@ def beam_search_decode(model,k,bert,tokenizer,
             
             last_word_prob = get_last_log_prob(seq,memory)
             
-            values, indices = last_word_prob.topk(k)
-            for j in range(k):
+            values, indices = last_word_prob.topk(k+len(sent))
+            for j in range(k+len(sent)):
                 w = ix2glyph[indices[j].item()]
+                if len(seq) != 0:
+                    if w in seq:
+                        continue
                 candidate = [seq+[w], score - values[j]]
                 all_candidates.append(candidate)
-                
+
         # order all candidates by score
         ordered = sorted(all_candidates, key=lambda t:t[1])
         

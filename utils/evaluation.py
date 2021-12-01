@@ -119,6 +119,7 @@ if __name__ == '__main__':
     
     ################################################################
     
+    
     predicts = []
     for sent in te_in:
         predict = beam_search_decode(model=model,
@@ -132,7 +133,10 @@ if __name__ == '__main__':
                               ix2glyph=ix2glyph,
                                 device=device)[0][0]
         predicts.append(''.join(predict))
-    
+#     for i, j , k in zip(te_in[:5],predicts[:5],te_out[:5]):
+#         print('top:',''.join(i))
+#         print('predict:',j)
+#         print('gold:',k)
     with open(f'../result/{name}_predict.txt','w') as f:
         for i in predicts:
             f.write(i+'\n')
