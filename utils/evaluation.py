@@ -13,14 +13,14 @@ import sys,os,torch,json,time
 REPO_PATH = "/".join(os.path.realpath(__file__).split("/")[:-2])
 print(REPO_PATH)
 
-from generate_couplet import beam_search_decode
-from transformers import (BertTokenizer,BertConfig,BertModel)
+# from generate_couplet import beam_search_decode
+# from transformers import (BertTokenizer,BertConfig,BertModel)
 
 
 if REPO_PATH not in sys.path:
     sys.path.insert(0, REPO_PATH)
-from model.fusionDataset import FusionDataset
-from model.fusion_transformer import Fusion_Anchi_Trans_Decoder, Fusion_Anchi_Transformer, Anchi_Decoder,Anchi_Transformer
+# from model.fusionDataset import FusionDataset
+# from model.fusion_transformer import Fusion_Anchi_Trans_Decoder, Fusion_Anchi_Transformer, Anchi_Decoder,Anchi_Transformer
 
 def evaluate_pred(gold, pred, perplexity_bi = '../result/perplexity_model.pt',perplexity_tr = '../result/perplexity_model_tr.pt'):
     """evaluation metrics for BLEU and Perplexity
@@ -65,7 +65,7 @@ def evaluate_pred(gold, pred, perplexity_bi = '../result/perplexity_model.pt',pe
     return avg_bleu, perplexity_bi , perplexity_tr
 
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
     """
     python evaluation
     """
