@@ -8,19 +8,21 @@ from nltk.lm.models import Laplace
 from nltk.lm import Vocabulary
 import pickle
 
-from generate_couplet import beam_search_decode
-from transformers import (BertTokenizer,BertConfig,BertModel)
-
 import sys,os,torch,json,time
 # sys.path.append('.../model')
 REPO_PATH = "/".join(os.path.realpath(__file__).split("/")[:-2])
 print(REPO_PATH)
+
+from generate_couplet import beam_search_decode
+from transformers import (BertTokenizer,BertConfig,BertModel)
+
+
 if REPO_PATH not in sys.path:
     sys.path.insert(0, REPO_PATH)
 from model.fusionDataset import FusionDataset
 from model.fusion_transformer import Fusion_Anchi_Trans_Decoder, Fusion_Anchi_Transformer, Anchi_Decoder,Anchi_Transformer
 
-def evaluate_pred(gold, pred, perplexity_model = '../result/perplexity_model.pt'):
+def evaluate_pred(gold, pred, perplexity_bi = '../result/perplexity_model.pt',perplexity_tr = '../result/perplexity_model_tr.pt'):
     """evaluation metrics for BLEU and Perplexity
 
     Args:
@@ -44,15 +46,23 @@ def evaluate_pred(gold, pred, perplexity_model = '../result/perplexity_model.pt'
         bleu_score += bleu([pred[i]], gold[i], smoothing_function = smoothfct)
     avg_bleu = bleu_score / len(gold)
     
-    # perplexity
-    f = open(perplexity_model, 'rb')
+    # perplexity -bigram
+    f = open(perplexity_bi, 'rb')
     lm = pickle.load(f)
     f.close()
 
     test_data = [nltk.bigrams(pad_both_ends(t, n = 2)) for t in pred]
-    perplexity_res = [lm.perplexity(data) for data in test_data]
+    perplexity_bi = sum([lm.perplexity(data) for data in test_data])/len(test_data)
+        
+    # perplexity -trigram
+    f = open(perplexity_tr, 'rb')
+    lm = pickle.load(f)
+    f.close()
+
+    test_data = [nltk.bigrams(pad_both_ends(t, n = 3)) for t in pred]
+    perplexity_tr = sum([lm.perplexity(data) for data in test_data])/len(test_data)
     
-    return avg_bleu, perplexity_res
+    return avg_bleu, perplexity_bi , perplexity_tr
 
 
 if __name__ == '__main__':
@@ -93,6 +103,7 @@ if __name__ == '__main__':
     ###############################################################
     #            Change this part based on model                  #
     ###############################################################
+    
     config = { # Fusion_Anchi_Transformer
         'max_position_embeddings':50,
         'hidden_size':768,
@@ -104,7 +115,7 @@ if __name__ == '__main__':
         'layer_norm_eps':1e-12, 
         'hidden_dropout':0.1, 
         'nhead':12,
-        'num_encoder_layers':5, # trainable
+        'num_encoder_layers':6, # trainable
         'num_decoder_layers':6, # trainable
         'output_dim':9110,# fixed use glyph dim as output
         'dim_feedforward': 3072,
@@ -113,15 +124,15 @@ if __name__ == '__main__':
         'device':device
     }
     # <model_name>_<optim>_<batch_num>_<lr>_<epoch>_<pinyin_embed_dim>_<tag_emb_dim>_<encoder layer>_<decoder layer>_<train_data_size>
-    name = 'fu_anchi_tra_Adam_128_00001_60_30_10_5_6_110k'
-    model = Fusion_Anchi_Transformer(config)
+    name = 'fu_anchi_tra_Adam_128_00001_60_30_10_6_6_110k_new'
+    model= Fusion_Anchi_Transformer(config)
     model.load_state_dict(torch.load(f'../result/{name}.pt'))
     
     ################################################################
     
     
     predicts = []
-    for sent in te_in:
+    for sent in te_in[:5]:
         predict = beam_search_decode(model=model,
                                 k=2,
                               bert=Anchibert,
@@ -133,16 +144,16 @@ if __name__ == '__main__':
                               ix2glyph=ix2glyph,
                                 device=device)[0][0]
         predicts.append(''.join(predict))
-#     for i, j , k in zip(te_in[:5],predicts[:5],te_out[:5]):
-#         print('top:',''.join(i))
-#         print('predict:',j)
-#         print('gold:',k)
+    for i, j , k in zip(te_in[:5],predicts[:5],te_out[:5]):
+        print('top:',''.join(i))
+        print('predict:',j)
+        print('gold:',k)
     with open(f'../result/{name}_predict.txt','w') as f:
         for i in predicts:
             f.write(i+'\n')
             
-    res = evaluate_pred(te_out, predicts)
+    res = evaluate_pred(te_out[:5], predicts)
     print('result',res)
     print('time:',time.time()-s1)
-    with open(f'../result/{name}.txt','w') as f:
-        f.write(f'{res[0]}\t{res[1][0]}\t{res[1][1]}')
+    with open(f'../result/{name}_score.txt','w') as f:
+        f.write(f'{res[0]}\t{res[1]}\t{res[2]}')
