@@ -66,94 +66,94 @@ def evaluate_pred(gold, pred, perplexity_bi = '../result/perplexity_model.pt',pe
 
 
 # if __name__ == '__main__':
-    """
-    python evaluation
-    """
-    s1 = time.time()
+    # """
+    # python evaluation
+    # """
+    # s1 = time.time()
     
-    config = BertConfig.from_pretrained('../AnchiBERT')
-    tokenizer = BertTokenizer.from_pretrained('../AnchiBERT')
-    Anchibert = BertModel.from_pretrained('../AnchiBERT',config=config)
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    # config = BertConfig.from_pretrained('../AnchiBERT')
+    # tokenizer = BertTokenizer.from_pretrained('../AnchiBERT')
+    # Anchibert = BertModel.from_pretrained('../AnchiBERT',config=config)
+    # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
-    with open('../data/char_map.json','r') as f:
-        ix2glyph = defaultdict(lambda : '_')
-        ix2glyph[0] = '[PAD]'
-        glyph2ix = defaultdict(lambda : 1)
-        glyph2ix.update({'[CLS]':0,'[SEP]':0,'[PAD]':0})
-        for i, k in enumerate(json.load(f).keys(),2):
-            glyph2ix[k] = i
-            ix2glyph[i] = k
-    with open('../data/pinyin_map.json','r') as f:
-        pinyin2ix = defaultdict(lambda : 1)
-        pinyin2ix.update({'[CLS]':0,'[SEP]':0,'[PAD]':0})
-        for i,k in enumerate(json.load(f).keys(),2):
-            pinyin2ix[k] = i
-    with open('../data/pos_tags.json','r') as f:
-        pos2ix = defaultdict(lambda : 0)
-        pos2ix.update(json.load(f))
+    # with open('../data/char_map.json','r') as f:
+    #     ix2glyph = defaultdict(lambda : '_')
+    #     ix2glyph[0] = '[PAD]'
+    #     glyph2ix = defaultdict(lambda : 1)
+    #     glyph2ix.update({'[CLS]':0,'[SEP]':0,'[PAD]':0})
+    #     for i, k in enumerate(json.load(f).keys(),2):
+    #         glyph2ix[k] = i
+    #         ix2glyph[i] = k
+    # with open('../data/pinyin_map.json','r') as f:
+    #     pinyin2ix = defaultdict(lambda : 1)
+    #     pinyin2ix.update({'[CLS]':0,'[SEP]':0,'[PAD]':0})
+    #     for i,k in enumerate(json.load(f).keys(),2):
+    #         pinyin2ix[k] = i
+    # with open('../data/pos_tags.json','r') as f:
+    #     pos2ix = defaultdict(lambda : 0)
+    #     pos2ix.update(json.load(f))
 
-    with open("../couplet/test/in.txt",encoding='utf8') as f:
-        te_in =  [row.strip().split() for row in f.readlines()]
+    # with open("../couplet/test/in.txt",encoding='utf8') as f:
+    #     te_in =  [row.strip().split() for row in f.readlines()]
     
-    #下联  
-    with open("../couplet/test/out.txt",encoding='utf8') as f:
-        te_out = [row.strip() for row in f.readlines()]
+    # #下联  
+    # with open("../couplet/test/out.txt",encoding='utf8') as f:
+    #     te_out = [row.strip() for row in f.readlines()]
     
-    ###############################################################
-    #            Change this part based on model                  #
-    ###############################################################
+    # ###############################################################
+    # #            Change this part based on model                  #
+    # ###############################################################
     
-    config = { # Fusion_Anchi_Transformer
-        'max_position_embeddings':50,
-        'hidden_size':768,
-        'font_weight_path':'../data/glyph_weight.npy',
-        'pinyin_embed_dim':30, # trainable
-        'pinyin_path':'../data/pinyin_map.json',
-        'tag_size':30,
-        'tag_emb_dim':10, # trainable 
-        'layer_norm_eps':1e-12, 
-        'hidden_dropout':0.1, 
-        'nhead':12,
-        'num_encoder_layers':6, # trainable
-        'num_decoder_layers':6, # trainable
-        'output_dim':9110,# fixed use glyph dim as output
-        'dim_feedforward': 3072,
-        'activation':'relu',
-        'trans_dropout':0.1,
-        'device':device
-    }
-    # <model_name>_<optim>_<batch_num>_<lr>_<epoch>_<pinyin_embed_dim>_<tag_emb_dim>_<encoder layer>_<decoder layer>_<train_data_size>
-    name = 'fu_anchi_tra_Adam_128_00001_60_30_10_6_6_110k_new'
-    model= Fusion_Anchi_Transformer(config)
-    model.load_state_dict(torch.load(f'../result/{name}.pt'))
+    # config = { # Fusion_Anchi_Transformer
+    #     'max_position_embeddings':50,
+    #     'hidden_size':768,
+    #     'font_weight_path':'../data/glyph_weight.npy',
+    #     'pinyin_embed_dim':30, # trainable
+    #     'pinyin_path':'../data/pinyin_map.json',
+    #     'tag_size':30,
+    #     'tag_emb_dim':10, # trainable 
+    #     'layer_norm_eps':1e-12, 
+    #     'hidden_dropout':0.1, 
+    #     'nhead':12,
+    #     'num_encoder_layers':6, # trainable
+    #     'num_decoder_layers':6, # trainable
+    #     'output_dim':9110,# fixed use glyph dim as output
+    #     'dim_feedforward': 3072,
+    #     'activation':'relu',
+    #     'trans_dropout':0.1,
+    #     'device':device
+    # }
+    # # <model_name>_<optim>_<batch_num>_<lr>_<epoch>_<pinyin_embed_dim>_<tag_emb_dim>_<encoder layer>_<decoder layer>_<train_data_size>
+    # name = 'fu_anchi_tra_Adam_128_00001_60_30_10_6_6_110k_new'
+    # model= Fusion_Anchi_Transformer(config)
+    # model.load_state_dict(torch.load(f'../result/{name}.pt'))
     
-    ################################################################
+    # ################################################################
     
     
-    predicts = []
-    for sent in te_in[:5]:
-        predict = beam_search_decode(model=model,
-                                k=2,
-                              bert=Anchibert,
-                              tokenizer=tokenizer,
-                              sent=sent,
-                              glyph2ix=glyph2ix,
-                              pinyin2ix=pinyin2ix,
-                              pos2ix=pos2ix,
-                              ix2glyph=ix2glyph,
-                                device=device)[0][0]
-        predicts.append(''.join(predict))
-    for i, j , k in zip(te_in[:5],predicts[:5],te_out[:5]):
-        print('top:',''.join(i))
-        print('predict:',j)
-        print('gold:',k)
-    with open(f'../result/{name}_predict.txt','w') as f:
-        for i in predicts:
-            f.write(i+'\n')
+    # predicts = []
+    # for sent in te_in[:5]:
+    #     predict = beam_search_decode(model=model,
+    #                             k=2,
+    #                           bert=Anchibert,
+    #                           tokenizer=tokenizer,
+    #                           sent=sent,
+    #                           glyph2ix=glyph2ix,
+    #                           pinyin2ix=pinyin2ix,
+    #                           pos2ix=pos2ix,
+    #                           ix2glyph=ix2glyph,
+    #                             device=device)[0][0]
+    #     predicts.append(''.join(predict))
+    # for i, j , k in zip(te_in[:5],predicts[:5],te_out[:5]):
+    #     print('top:',''.join(i))
+    #     print('predict:',j)
+    #     print('gold:',k)
+    # with open(f'../result/{name}_predict.txt','w') as f:
+    #     for i in predicts:
+    #         f.write(i+'\n')
             
-    res = evaluate_pred(te_out[:5], predicts)
-    print('result',res)
-    print('time:',time.time()-s1)
-    with open(f'../result/{name}_score.txt','w') as f:
-        f.write(f'{res[0]}\t{res[1]}\t{res[2]}')
+    # res = evaluate_pred(te_out[:5], predicts)
+    # print('result',res)
+    # print('time:',time.time()-s1)
+    # with open(f'../result/{name}_score.txt','w') as f:
+    #     f.write(f'{res[0]}\t{res[1]}\t{res[2]}')
