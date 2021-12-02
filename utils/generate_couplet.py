@@ -3,7 +3,7 @@ __time__   = "2021/12/2"
 __version__= "2.0"
 
 import torch
-import sys,os,json
+import sys,os,json,time
 from collections import defaultdict
 
 REPO_PATH = "/".join(os.path.realpath(__file__).split("/")[:-2])
@@ -254,19 +254,28 @@ if __name__ == '__main__':
     ###############################################################
     #            Change this part based on model                  #
     ###############################################################
-    config = { # for Trans_Decoder
+    config = { # Fusion_Anchi_Transformer
         'max_position_embeddings':50,
         'hidden_size':768,
-        'layer_norm_eps':1e-12,
-        'hidden_dropout':0.1,
+        'font_weight_path':'../data/glyph_weight.npy',
+        'pinyin_embed_dim':30, # trainable
+        'pinyin_path':'../data/pinyin_map.json',
+        'tag_size':30,
+        'tag_emb_dim':10, # trainable 
+        'layer_norm_eps':1e-12, 
+        'hidden_dropout':0.1, 
         'nhead':12,
-        'num_layers':6, # trainable
+        'num_encoder_layers':6, # trainable
+        'num_decoder_layers':6, # trainable
         'output_dim':9110,# fixed use glyph dim as output
+        'dim_feedforward': 3072,
+        'activation':'relu',
+        'trans_dropout':0.1,
         'device':device
     }
-    # <model_name>_<optim>_<batch_num>_<lr>_<epoch>_<num_layer>_<train_size>
-    name = 'anchi_de_Adam_128_0001_10_60_6_51k_new'
-    model = Anchi_Decoder(config)
+    # <model_name>_<optim>_<batch_num>_<lr>_<epoch>_<pinyin_embed_dim>_<tag_emb_dim>_<encoder layer>_<decoder layer>_<train_data_size>
+    name = 'fu_anchi_tra_Adam_128_00001_60_30_10_6_6_110k_new'
+    model= Fusion_Anchi_Transformer(config)
     model.load_state_dict(torch.load(f'../result/{name}.pt'))
     
     ################################################################
