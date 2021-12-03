@@ -9,7 +9,7 @@ import pickle
 import torch
 from torch.nn.utils.rnn import pad_sequence
 
-def generate_pos_tagging(texts, tag_json = '../data/pos_tags.json', same_size = True, tqdm_mode = True, n_jobs = 6):
+def generate_pos_tagging(texts, tag_json = '../pretrained_model/pos_tags.json', same_size = True, tqdm_mode = True, n_jobs = 6):
     """generate pos tagging array
 
     Args:

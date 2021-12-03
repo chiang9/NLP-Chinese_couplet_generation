@@ -1,4 +1,3 @@
-#     return best_model, train_losses,valid_losses
 __author__ = "Shihao Lin"
 __time__   = "2021/12/1"
 __version__= "2.0"
@@ -29,18 +28,6 @@ def train_epoch(model,dataLoader,optimizer,loss_function,
         Ysents_attention_mask,Ysents_pinyin_ids,\
         Ysents_glyph_ids,Ysents_pos_ids,trueY,y_mask_ids in dataLoader:
         
-#         Xsents_input_ids = Xsents_input_ids.to(device)
-#         Xsents_token_type_ids = Xsents_token_type_ids.to(device)
-#         Xsents_attention_mask = Xsents_attention_mask.to(device)
-#         Xsents_pinyin_ids = Xsents_pinyin_ids.to(device)
-#         Xsents_glyph_ids = Xsents_glyph_ids.to(device)
-#         Xsents_pos_ids = Xsents_pos_ids.to(device)
-#         Ysents_input_ids = Ysents_input_ids.to(device)
-#         Ysents_token_type_ids = Ysents_token_type_ids.to(device)
-#         Ysents_attention_mask = Ysents_attention_mask.to(device)
-#         Ysents_pinyin_ids = Ysents_pinyin_ids.to(device)
-#         Ysents_glyph_ids = Ysents_glyph_ids.to(device)
-#         Ysents_pos_ids = Ysents_pos_ids.to(device)
         
         Xword_embeddings = bert(Xsents_input_ids,      \
                                  Xsents_token_type_ids, \
@@ -56,11 +43,7 @@ def train_epoch(model,dataLoader,optimizer,loss_function,
                                             Ysents_attention_mask[:,:i+1])\
                                             ['last_hidden_state'].detach()[:,i,:]
         
-        # Yword_embeddings = bert(Ysents_input_ids,      \
-        #                         Ysents_token_type_ids, \
-        #                         Ysents_attention_mask  \
-        #                         )['last_hidden_state'].detach()
-        
+
         inputs = {'Xword_embeddings':Xword_embeddings, \
                   'Xsents_pinyin_ids':Xsents_pinyin_ids, \
                   'Xsents_glyph_ids':Xsents_glyph_ids,\
@@ -110,18 +93,6 @@ def evaluate_epoch(model,dataLoader,loss_function,
             Ysents_attention_mask,Ysents_pinyin_ids,\
             Ysents_glyph_ids,Ysents_pos_ids,trueY,y_mask_ids in dataLoader:
 
-#             Xsents_input_ids = Xsents_input_ids.to(device)
-#             Xsents_token_type_ids = Xsents_token_type_ids.to(device)
-#             Xsents_attention_mask = Xsents_attention_mask.to(device)
-#             Xsents_pinyin_ids = Xsents_pinyin_ids.to(device)
-#             Xsents_glyph_ids = Xsents_glyph_ids.to(device)
-#             Xsents_pos_ids = Xsents_pos_ids.to(device)
-#             Ysents_input_ids = Ysents_input_ids.to(device)
-#             Ysents_token_type_ids = Ysents_token_type_ids.to(device)
-#             Ysents_attention_mask = Ysents_attention_mask.to(device)
-#             Ysents_pinyin_ids = Ysents_pinyin_ids.to(device)
-#             Ysents_glyph_ids = Ysents_glyph_ids.to(device)
-#             Ysents_pos_ids = Ysents_pos_ids.to(device)
 
             Xword_embeddings = bert(Xsents_input_ids,      \
                                      Xsents_token_type_ids, \
@@ -284,10 +255,9 @@ def train(model,trainSet,validSet,batch_size,lr, epoch,bert,name= None,
         else:
             valid_patience_counter += 1
             if valid_patience_counter == patience:
+                # early stopping
                 break
-#                 return best_model,train_losses,valid_losses
     torch.save(best_model,os.path.join(store,f'{name}.pt'))
     
     with open(os.path.join(store,f'{name}_losses.pt'),'wb') as f:
         pickle.dump((train_losses,valid_losses),f)
-#     return best_model, train_losses,valid_losses

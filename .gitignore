@@ -115,3 +115,6 @@ dmypy.json
 .vscode
 /AnchiBert
 /b1
+/paper
+result/fu_anchi_de_Adam_128_0001_60_6_30_10_51k.pt
+result/anchi_tra_Adam_128_00005-1_60_6_6_51k.pt

@@ -93,7 +93,7 @@ def greedy_decode(model,bert,tokenizer,
         prob = model.Linear(out[-1,0,:])
         # prob = model.Linear(out)
 
-        # FYI, while you implement the beam search
+        # While you implement the beam search
         # add F.log_softmax(out, dim=-1) to it to get acutual log prob
         _,next_word = torch.max(prob,dim=-1)
         # print(next_word)
@@ -216,6 +216,10 @@ def beam_search_decode(model,k,bert,tokenizer,
         sequences = ordered[:k]
     return sequences
 
+###############################################################
+#                      Sample usage                           #
+###############################################################
+
 if __name__ == '__main__':
     """
     python evaluation
@@ -274,6 +278,7 @@ if __name__ == '__main__':
         'device':device
     }
     # <model_name>_<optim>_<batch_num>_<lr>_<epoch>_<pinyin_embed_dim>_<tag_emb_dim>_<encoder layer>_<decoder layer>_<train_data_size>
+    
     name = 'fu_anchi_tra_Adam_128_00001_60_30_10_6_6_110k_new'
     model= Fusion_Anchi_Transformer(config)
     model.load_state_dict(torch.load(f'../result/{name}.pt'))
@@ -294,6 +299,7 @@ if __name__ == '__main__':
                               ix2glyph=ix2glyph,
                                 device=device)[0][0]
         predicts.append(''.join(predict))
+        
 #     for i, j , k in zip(te_in[:5],predicts[:5],te_out[:5]):
 #         print('top:',''.join(i))
 #         print('predict:',j)

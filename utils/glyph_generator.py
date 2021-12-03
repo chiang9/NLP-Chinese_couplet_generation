@@ -7,6 +7,9 @@ import numpy as np
 import pygame
 from pygame.surfarray import array3d
 
+"""
+This script is used to produce the pretrained Glyph embedding data
+"""
 
 def generate_Glyph_initial_weight(chardict_filepath,font_filepath,font_size=24):
     """

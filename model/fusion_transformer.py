@@ -20,9 +20,9 @@ class Fusion_Anchi_Trans_Decoder(nn.Module):
     config = { # for Fusion_Anchi_Trans_Decoder
         'max_position_embeddings':50,
         'hidden_size':768,
-        'font_weight_path':'data/glyph_weight.npy',
+        'font_weight_path':'pretrained_model/glyph_weight.npy',
         'pinyin_embed_dim':30,
-        'pinyin_path':'data/pinyin_map.json',
+        'pinyin_path':'pretrained_model/pinyin_map.json',
         'tag_size':30,
         'tag_emb_dim':10,
         'layer_norm_eps':1e-12,
@@ -46,11 +46,6 @@ class Fusion_Anchi_Trans_Decoder(nn.Module):
                                          (3/config['output_dim'])**0.5,)
         self.Linear.bias.data.fill_(0)
         
-    def _generate_square_subsequent_mask(self, sz):
-        mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
-        mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
-        return mask
-        
     def forward(self,Xword_embeddings,Xsents_pinyin_ids, \
                 Xsents_glyph_ids,Xsents_pos_ids,\
                 Yword_embeddings,Ysents_pinyin_ids, \
@@ -73,11 +68,16 @@ class Fusion_Anchi_Trans_Decoder(nn.Module):
                                            # Ypad_hidden_mask == ~ Ysents_attention_mask.bool()
                                            tgt_key_padding_mask= Ypad_hidden_mask  \
                                           ).permute([1,0,2]) #[batch_size,max_length,output_dim]
-        # print('shape1',outputs.shape)
-
         outputs = self.Linear(outputs)
 
         return F.log_softmax(outputs, dim=-1)
+    
+    
+    def _generate_square_subsequent_mask(self, sz):
+        mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
+        mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
+        return mask
+        
     
     def encode(self,Xword_embeddings,Xsents_pinyin_ids, \
                 Xsents_glyph_ids,Xsents_pos_ids,*args,**kwargs):
@@ -284,9 +284,9 @@ class Anchi_Decoder(nn.Module):
     config = { # for Fusion_Anchi_Trans_Decoder
         'max_position_embeddings':50,
         'hidden_size':768,
-        'font_weight_path':'data/glyph_weight.npy',
+        'font_weight_path':'pretrained_model/glyph_weight.npy',
         'pinyin_embed_dim':30,
-        'pinyin_path':'data/pinyin_map.json',
+        'pinyin_path':'pretrained_model/pinyin_map.json',
         'tag_size':30,
         'tag_emb_dim':10,
         'layer_norm_eps':1e-12,

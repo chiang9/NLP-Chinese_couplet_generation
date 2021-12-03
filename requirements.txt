@@ -3,3 +3,8 @@ transformers
 numpy
 pandas
 gensim
+pygame
+tqdm
+jieba
+paddlepaddle
+pypinyin
