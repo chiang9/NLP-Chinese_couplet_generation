@@ -4,6 +4,7 @@
 
 Chinese couplet is a special form of poetry composed of complex syntax with ancient Chinese language. Due to the complexity of semantic and grammatical rules, creation of a suitable couplet is a formidable challenge. This paper presents an transformer-based sequence-to-sequence automatic couplet generation model. With the utilization of PinYin and Part-of-Speech tagging, the model achieves the couplet generation. Moreover, we evaluate the [AnchiBERT](https://arxiv.org/abs/2009.11473) on the ancient Chinese language understanding to further improve the model. 
 
+Arxiv Link: https://arxiv.org/abs/2112.01707?fbclid=IwAR0mtMdVqq5xRxXxpOA8fE7lX7iDdRyNnWQZxXLgEvkjGJaoVFGxyqZNaQA
 
 ### Installation
 
